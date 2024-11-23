@@ -37,7 +37,7 @@ API Fuzzer is a fast and efficient tool designed for testing APIs by sending tho
 3. Run the fuzzer with the following command:
 
    ```bash
-   python Fuzzer.py <wordlist-path>
+   python Fuzzer.py --headers '{"key":"value"}' -w <wordlist-path>
    ```
 
    Replace `<wordlist-path>` with the path to your wordlist file if needed. 
