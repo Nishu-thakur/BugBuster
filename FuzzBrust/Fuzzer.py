@@ -13,7 +13,10 @@ import json
 warnings.simplefilter('ignore', InsecureRequestWarning) 
 
 FUZZ_LIST = list() #FUZZ_LIST store our fuzzy payload
-COUNTER=0
+
+HEADERS = {"HEADER":"","WORDLIST":""}
+
+
 
 #  REQUEST file 
 with open('requests.json','r') as file:
@@ -47,15 +50,14 @@ def process_word(word):
 # FUZZ filler which fill fuzz when my FUZZ_LIST is empty
 
 def FUZZ_FILLER():
-    if len(sys.argv) > 1:
-        if(os.path.exists(sys.argv[1])):
-            PATH=sys.argv[1]
-            with open(PATH,'r',encoding='utf-8') as file:
-                WORDLIST = file.read().split('\n')
-            for words in WORDLIST:
-                FUZZ_LIST.append(process_word(words))
-        else:
-            sys.exit(1)
+    path = HEADERS["WORDLIST"]
+    if(os.path.exists(path)):
+        with open(path,'r',encoding='utf-8') as file:
+            WORDLIST = file.read().split('\n')
+        for words in WORDLIST:
+            FUZZ_LIST.append(process_word(words))
+    else:
+        sys.exit(1)
 
 
 
@@ -86,11 +88,10 @@ def replace_fuzz(data, payload):
 
 
 
-Token = ['666ad781-aa60-4000-9e3e-cf5ae2d41bd3','555bb639-8325-4840-91c0-c25a9c38f366']
 
 proxies = {
-    'http':'http://127.0.0.1:8081',
-    'https':'http://127.0.0.1:8081'
+    'http':'http://127.0.0.1:8080',
+    'https':'http://127.0.0.1:8080'
 }
 
 
@@ -102,12 +103,7 @@ class Fuzzer:
         self.METHOD=METHOD # Method 
         self.URL=TARGET_URL # Target URL
         self.DATA=DATA # DATA
-        self.headers = {
-                "User-Agent": "PostmanRuntime/7.42.0",
-                "X-API-KEY":"555bb639-8325-4840-91c0-c25a9c38f366",
-                "Content-Type":"application/json",
-                "Referer":"https://api.rarible.com"
-        } # headers parameters
+        self.headers = HEADERS["HEADER"] # headers parameters
         self.WORDLIST = queue.Queue()
         for fuzz in FUZZ_LIST:
             self.WORDLIST.put(fuzz)
@@ -130,8 +126,6 @@ class Fuzzer:
                 time.sleep(3)
                 self.WORDLIST.put(FUZZ)
                 
-            if(request_manager.status_code==403):
-                self.headers['X-Auth-Token'] = Token[random.randint(0,len(Token)-1)]
 
             print(f'#-{self.URL:<60} {request_manager.status_code:<10} {FUZZ}')
 
@@ -180,6 +174,26 @@ def run():
         THREAD_LIST.append(thread)
     for thr in THREAD_LIST:
         thr.join()
+
+def help():
+    print('#[usage] python Fuzzer.py --headers \'{"key":"value"}\' -w <wordlist>')
+    sys.exit()
+
+def parameterHandler(args):
+    if len(args)>1:
+        if "--headers" in args:
+            HEADERS["HEADER"] = json.loads(args[args.index("--headers")+1])
+        else:
+            help()
+        
+        if "-w" in args:
+            HEADERS["WORDLIST"] = args[args.index("-w")+1]
+        else:
+            help()
+    else:
+        help()
        
 if __name__=="__main__":
+    args = sys.argv
+    parameterHandler(args)
     run()
